@@ -11,13 +11,13 @@ const myEmitter = new EventEmitter();
 //     console.log('Connected to the tasks database.');
 // });
 
-// db.run(`CREATE TABLE tasks (
-//     id INTEGER PRIMARY KEY,
-//     title TEXT,
-//     task_index INTEGER
-// )`);
+db.run(`CREATE TABLE IF NOT EXISTS tasks (
+    id INTEGER PRIMARY KEY,
+    title TEXT,
+    task_index INTEGER
+)`);
 
-// db.run(`CREATE TABLE steps({"data":[]}
+// db.run(`CREATE TABLE IF NOT steps({"data":[]}
 //     id INTEGER PRIMARY KEY,
 //     task_id INTEGER,
 //     num INTEGER,
