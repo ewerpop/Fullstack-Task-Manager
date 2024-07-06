@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import TaskSteps from "./TaskSteps";
 import Button from "./Button";
 
-export default function Task({ moveStep, setActiveStep, task, editTask, deleteTask, addStep, deleteStep, doneStep, index, setActiveCard, post }) {
+export default function Task({ postData, moveStep, setActiveStep, task, editTask, deleteTask, addStep, deleteStep, doneStep, index, setActiveCard, state }) {
   const defaultStyle = {
     alignItems: 'left',
     background: "blue",
@@ -31,6 +31,12 @@ export default function Task({ moveStep, setActiveStep, task, editTask, deleteTa
     setStyle({ ...style, width: String(progress) + '%' })
   }, [task.steps])
 
+  const onSubmit = (e) => {
+    e.preventDefault()
+    deleteTask({ id: task.id, action: 'Delete' })
+    postData({ action: 'Delete task', id: task.id })
+  }
+
 
   return (
     <li className="card" draggable={!visible} onDragStart={() => setActiveCard(index)} onDragEnd={() => setActiveCard(null)}>
@@ -39,7 +45,8 @@ export default function Task({ moveStep, setActiveStep, task, editTask, deleteTa
           <form onSubmit={(e) => {
             e.preventDefault()
             setVisible((v) => v = !v)
-          }}><Button icon='caret' label='caret' /></form>
+          }}><Button icon='caret' label='caret' />
+          </form>
         </li>
         <li>
           <TaskHeader task={task} isEditable={isEditable} setEditable={setEditable} editTask={editTask} />
@@ -54,10 +61,12 @@ export default function Task({ moveStep, setActiveStep, task, editTask, deleteTa
           <button className="card-control" onClick={() => setEditable(true)}>Edit</button>
         </li>}
         <li>
-          <button className="card-control" onClick={() => deleteTask({ id: task.id, action: 'Delete' })}>Delete</button>
+          <form onSubmit={onSubmit}>
+            <button className="card-control">Delete</button>
+          </form>
         </li>
       </ul>
-      {visible ? <TaskSteps moveStep={moveStep} setActiveStep={setActiveStep} id={task.id} steps={task.steps} addStep={addStep} deleteStep={deleteStep} doneStep={doneStep} /> : null}
+      {visible ? <TaskSteps task={task} postData={postData} state={state} moveStep={moveStep} setActiveStep={setActiveStep} id={task.id} steps={task.steps} addStep={addStep} deleteStep={deleteStep} doneStep={doneStep} /> : null}
       <div style={style}></div>
 
     </li>

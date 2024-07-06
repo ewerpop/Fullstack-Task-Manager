@@ -3,6 +3,20 @@ const sqlite3 = require('sqlite3').verbose()
 const fs = require('fs')
 const EventEmitter = require('events');
 const myEmitter = new EventEmitter();
+const client = require('./client')
+
+async function createDB() {
+    try {
+        await client.init()
+        await client.connect()
+        await client.createTasks()
+        await client.createSteps()
+    } catch (e) {
+        console.error(e)
+    }
+}
+
+createDB()
 
 // let db = new sqlite3.Database('./tasks.db', (err) => {
 //     if (err) {
@@ -11,13 +25,13 @@ const myEmitter = new EventEmitter();
 //     console.log('Connected to the tasks database.');
 // });
 
-db.run(`CREATE TABLE IF NOT EXISTS tasks (
-    id INTEGER PRIMARY KEY,
-    title TEXT,
-    task_index INTEGER
-)`);
+// db.run(`CREATE TABLE IF NOT EXISTS tasks (
+//     id INTEGER PRIMARY KEY,
+//     title TEXT,
+//     task_index INTEGER
+// )`);
 
-// db.run(`CREATE TABLE IF NOT steps({"data":[]}
+// db.run(`CREATE TABLE IF NOT EXISTS steps(
 //     id INTEGER PRIMARY KEY,
 //     task_id INTEGER,
 //     num INTEGER,
@@ -50,6 +64,43 @@ app.get('/todo-items', (req, res) => {
     res.json(fs.readFileSync('./todo-items.json', 'utf8'))
 })
 
+// const addTask =  (title, index, id) => {
+//     return new Promise((resolve, reject) => {
+//         db.run(`INSERT INTO tasks(title, task_index, id)
+//         VALUES(?, ?, ?)`, [title, index, id], function(e) {
+//             if(e) reject(e)
+//             resolve(id)
+//         }
+//     )
+//     })
+    
+// }
+
+app.post('/todo-items', async (req, res) => {
+    let obj = req.body.data
+    try {
+        switch (obj.action) {
+            case 'Add task':
+                await client.run([obj.title, obj.index, obj.id], `INSERT INTO tasks (title, task_index, id) VALUES (?, ?, ?)`)
+                break
+            case 'Add step':
+                await client.run([obj.id, obj.num, obj.label, obj.step_index], `INSERT INTO steps (task_id, num, label, done, step_index) VALUES (?, ?, ?, ?, ?)`)
+                break
+            case 'Delete task':
+                await client.run(obj.id, `DELETE FROM tasks WHERE id=?`)
+                await client.run(obj.id, 'DELETE FROM steps WHERE task_id=?')
+                break
+            case 'Delete step':
+                await client.run(obj.num, `DELETE FROM steps WHERE num=?`)
+        }
+        res.send("ok")
+    } catch (e) {
+        console.error(e)
+        res.send(e)
+    }
+    
+})
+
 app.put('/todo-items', (req, res) => {
     res.send(req.body)
     newItems.push(req.body)
@@ -58,7 +109,6 @@ app.put('/todo-items', (req, res) => {
 })
 
 myEmitter.on('itemsUpdated', () => {
-    //console.log(newItems[0])
     fs.writeFileSync('./todo-items.json', JSON.stringify(newItems[0]))
     newItems.splice(0, newItems.length)
 })

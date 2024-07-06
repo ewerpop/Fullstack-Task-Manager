@@ -17,7 +17,7 @@ export default function TaskHeader({task, isEditable, setEditable, editTask}) {
       <header className="card-header">
         <form className="card-title-form" onSubmit={handleEditTask}>
           <input
-            className="card-title card-title-input"
+            className="card-title-input"
             defaultValue={title}
             value={title}
             onChange={onChange}

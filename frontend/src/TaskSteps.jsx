@@ -2,7 +2,7 @@ import TaskStepForm from "./TaskStepForm"
 import Button from "./Button"
 import DropArea from "./DropArea"
 
-export default function TaskSteps({moveStep, steps, addStep, deleteStep, doneStep, id, setActiveStep}) {
+export default function TaskSteps({task, state, postData, moveStep, steps, addStep, deleteStep, doneStep, id, setActiveStep}) {
 
     return (
     <div>
@@ -26,6 +26,7 @@ export default function TaskSteps({moveStep, steps, addStep, deleteStep, doneSte
                         <form onSubmit={(ev) => {
                             ev.preventDefault()
                             deleteStep({action: "Delete step", id: id, num: e.num})
+                            postData({action: 'Delete step', num: e.num})
                         }}><Button icon='trash' label="Delete"></Button></form>
                         
                     </li>
@@ -36,7 +37,7 @@ export default function TaskSteps({moveStep, steps, addStep, deleteStep, doneSte
                 )
             })}
         </ul>
-        <TaskStepForm addStep={addStep} id={id}/>
+        <TaskStepForm task={task} postData={postData} addStep={addStep} state={state} id={id}/>
     </div>
     )
 }

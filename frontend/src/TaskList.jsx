@@ -95,14 +95,14 @@ function TaskList() {
     return state.sort((a, b) => a.index - b.index)
   }
 
-  const addTask = (state, title) => {
-    return state.concat([{ id: Date.now(), title: title, steps: [], index: state.length }])
+  const addTask = (state, title, id, task_index) => {
+    return state.concat([{ id: id, title: title, steps: [], index: task_index }])
   }
 
-  const addStep = (state, label, id) => {
+  const addStep = (state, label, id, num, step_index) => {
     const task = state.find((e) => e.id === id);
     if (task) {
-      return state.map((e) => e.id === id ? { ...e, steps: e.steps.concat([{ num: Date.now(), label: label, done: false, index: e.steps.length }]) } : e);
+      return state.map((e) => e.id === id ? { ...e, steps: e.steps.concat([{ num: num, label: label, done: false, index: step_index }]) } : e);
     }
     return state;
   }
@@ -123,16 +123,16 @@ function TaskList() {
     return state;
   }
 
-  const reducer = (state, { action, id, title, label, num, done, index, value }) => {
+  const reducer = (state, { action, id, title, label, num, done, index, value, step_index, task_index }) => {
     switch (action) {
       case 'Delete':
         return deleteTask(state, id)
       case 'Edit':
         return editTask(state, title, id)
       case 'Add':
-        return addTask(state, title)
+        return addTask(state, title, id, task_index)
       case 'Add step':
-        return addStep(state, label, id)
+        return addStep(state, label, id, num, step_index)
       case 'Delete step':
         return deleteStep(state, id, num)
       case 'Done step':
@@ -151,13 +151,12 @@ function TaskList() {
   }
   const [state, dispatch] = useReducer(reducer, initialState)
 
-  console.log(initialState) 
 
   useEffect(() => {
     dispatch({action: 'New', value: initialState})
   }, [initialState])
 
-  async function postData() {
+  async function putData() {
 
     let res = await fetch('/todo-items', {
       method: 'PUT',
@@ -169,7 +168,18 @@ function TaskList() {
     })
   }
 
-  console.log(state)
+  async function postData(obj) {
+    let res = await fetch('/todo-items', {
+      method: 'POST', 
+      headers: {
+        'Content-Type': 'application/json;charset=utf-8',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({data: obj})
+    })
+    console.log(res)
+  }
+  
   return (
     <React.Fragment>
       <DropArea onDrop={() => dispatch({ index: 0, action: 'Move' })} />
@@ -177,15 +187,15 @@ function TaskList() {
         {state.map((e) => {
           return (
             <React.Fragment key={e.id} >
-              <Task moveStep={dispatch} setActiveStep={setActiveStep} setActiveCard={setActiveCard} index={e.index} task={e} editTask={dispatch} deleteTask={dispatch} addStep={dispatch} doneStep={dispatch} deleteStep={dispatch} />
+              <Task postData={postData} state={state} moveStep={dispatch} setActiveStep={setActiveStep} setActiveCard={setActiveCard} index={e.index} task={e} editTask={dispatch} deleteTask={dispatch} addStep={dispatch} doneStep={dispatch} deleteStep={dispatch} />
               <DropArea index={e.index} onDrop={() => dispatch({ index: e.index + 1, action: 'Move' })} />
             </React.Fragment>
           )
         })}
-        <TaskAdd addTask={dispatch} />
+        <TaskAdd addTask={dispatch} state={state} postData={postData}/>
         <form onSubmit={(e) => {
           e.preventDefault()
-          postData()
+          putData()
         }}>
           <Button icon={'plus'} label={'save'}/>
         </form>
