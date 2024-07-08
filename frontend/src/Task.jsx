@@ -49,7 +49,7 @@ export default function Task({ postData, moveStep, setActiveStep, task, editTask
           </form>
         </li>
         <li>
-          <TaskHeader task={task} isEditable={isEditable} setEditable={setEditable} editTask={editTask} />
+          <TaskHeader postData={postData} task={task} isEditable={isEditable} setEditable={setEditable} editTask={editTask} />
         </li>
         <li>
           {progress}%

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function TaskHeader({task, isEditable, setEditable, editTask}) {
+export default function TaskHeader({postData, task, isEditable, setEditable, editTask}) {
   const [title, setTitle] = useState(task.title)
 
   const onChange = (e) => {
@@ -10,6 +10,7 @@ export default function TaskHeader({task, isEditable, setEditable, editTask}) {
   const handleEditTask = (e) => {
     e.preventDefault()
     editTask({id: task.id, title: title, action: 'Edit'})
+    postData({action: 'Edit task', title: title, id: task.id})
     setEditable(false)
   }
   if(isEditable) {

@@ -9,6 +9,22 @@ module.exports = {
             return e
         }
     },
+    query(sql) {
+        return new Promise((res, rej) => {
+            this.db.all(sql, [], function(e, result) {
+                if (e) rej(e)
+                res(result)
+            })
+        }) 
+    },
+    select(sql) {
+        return new Promise((res, rej) => {
+            this.db.all(sql, [], function(e, data) {
+                if (e) rej(e)
+                res(data)
+            })
+        })
+    },
     connect() {
         return new Promise((res, rej) => {
             this.db = new sqlite3.Database('./tasks.db', (err) => {
@@ -65,7 +81,7 @@ module.exports = {
     },
     insertTask(title, task_index, id) {
         return new Promise((res, rej) => {
-            this.db.run(`INSERT INTO tasks (title, task_index, id) VALUES (?, ?, ?)`, [title, task_index, id], function (e){
+            this.db.run(`INSERT INTO tasks (title, task_index, id) VALUES (?, ?, ?)`, [title, task_index, id], function (e) {
                 if (e) {
                     rej(e)
                 } else {
@@ -76,19 +92,19 @@ module.exports = {
     },
     deleteTask(id) {
         return new Promise((res, rej) => {
-            this.db.run(`DELETE FROM tasks WHERE id=?`, id,  function(e) {
-                if(e) {
+            this.db.run(`DELETE FROM tasks WHERE id=?`, id, function (e) {
+                if (e) {
                     rej(e)
                 } else {
                     res(200)
                 }
             })
-            
+
         })
     },
     run(values, sql) {
         return new Promise((res, rej) => {
-            this.db.run(sql, values, function(e) {
+            this.db.run(sql, values, function (e) {
                 if (e) {
                     rej(e)
                 } res(200)

@@ -60,9 +60,12 @@ app.use(express.json());
 
 let newItems = []
 
-app.get('/todo-items', (req, res) => {
-    res.json(fs.readFileSync('./todo-items.json', 'utf8'))
+app.get('/todo-items', async (req, res) => {
+    let result = await client.query(`SELECT * FROM tasks LEFT JOIN steps ON tasks.id = steps.task_id ORDER BY tasks.id`)
+    console.log(result)
+    res.json(JSON.stringify({data: []}))
 })
+
 
 // const addTask =  (title, index, id) => {
 //     return new Promise((resolve, reject) => {
@@ -84,7 +87,7 @@ app.post('/todo-items', async (req, res) => {
                 await client.run([obj.title, obj.index, obj.id], `INSERT INTO tasks (title, task_index, id) VALUES (?, ?, ?)`)
                 break
             case 'Add step':
-                await client.run([obj.id, obj.num, obj.label, obj.step_index], `INSERT INTO steps (task_id, num, label, done, step_index) VALUES (?, ?, ?, ?, ?)`)
+                await client.run([obj.id, obj.num, obj.label, false, obj.step_index], `INSERT INTO steps (task_id, num, label, done, step_index) VALUES (?, ?, ?, ?, ?)`)
                 break
             case 'Delete task':
                 await client.run(obj.id, `DELETE FROM tasks WHERE id=?`)
@@ -92,6 +95,17 @@ app.post('/todo-items', async (req, res) => {
                 break
             case 'Delete step':
                 await client.run(obj.num, `DELETE FROM steps WHERE num=?`)
+                break
+            case 'Edit task':
+                await client.run([obj.title, obj.id], `UPDATE tasks
+                    SET title = ?
+                    WHERE id=?`)
+                break
+            case 'Done step':
+                await client.run([!obj.done, obj.num], `UPDATE steps
+                    SET done = ?
+                    WHERE num=?`)
+                break
         }
         res.send("ok")
     } catch (e) {
