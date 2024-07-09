@@ -1,20 +1,21 @@
 import Button from "./Button"
 import { useState } from "react"
 
-export default function TaskStepForm({task, postData, addStep, id, state }) {
+export default function TaskStepForm({ task, postData, addStep, id, state }) {
     const [value, setValue] = useState('')
 
     const onSubmit = (e) => {
-        const idx = task.steps.length + 1
+        const idx = task.steps.length
+        console.log(idx)
         const num = Date.now()
         e.preventDefault()
         addStep({ action: 'Add step', id: id, label: value, num: num, step_index: idx })
         postData({
-            action: 'Add step', 
+            action: 'Add step',
             id: id,
             label: value,
             num: num,
-            step_index: idx 
+            step_index: idx * 1000
         })
         setValue('')
     }

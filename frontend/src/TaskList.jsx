@@ -15,14 +15,31 @@ function TaskList() {
   const [activeCard, setActiveCard] = useState(null) //* activeCard принимает значение index, той карточки, которую сейчас перетаскивают
   const [initialState, setInitialState] = useState([])
 
+
+  async function postData(obj) {
+    let res = await fetch('/todo-items', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=utf-8',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({ data: obj })
+    })
+    console.log(res)
+  }
+
+
   async function getData() {
     fetch('/todo-items')
       .then((res) => res.json())
       .then((result) => {
-        console.log(result)
         let resultJSON = JSON.parse(result)
-        console.log(resultJSON.data)
-        setInitialState(resultJSON.data)})
+        let newResult = resultJSON.data.map((e) => {
+          return { ...e, steps: e.steps.sort((a, b) => a.index - b.index) }
+        })
+        console.log(newResult)
+        setInitialState(newResult.sort((a, b) => a.index - b.index))
+      })
   }
 
 
@@ -41,46 +58,85 @@ function TaskList() {
     const steps = findCard.steps
     const findActiveStep = steps.find((c) => c.index === activeStep)
     const clearState = state.filter((c) => c.id !== id)
+    const indexOfEl = steps.indexOf(steps.find((e) => e.index + 1 === index))
+
+    if (index === 0) {
+      steps[0].index = steps[1].index / 2
+      const newSteps = steps.map((c) => {
+        if (c.index === activeStep) {
+          return { ...c, index: 0 }
+        }
+        return c
+      }).sort((a, b) => a.index - b.index)
+      postData({ action: 'Special move step', num1: steps[0].num, step_index1: steps[1].index / 2, num2: findActiveStep.num, step_index2: 0 })
+      return clearState.concat([{ ...findCard, steps: newSteps }]).sort((a, b) => a.index - b.index)
+    }
+
+    if (index === steps[steps.length - 1].index + 1) {
+      const newIndex = steps.find((e) => e.index === index - 1).index * 1.5
+      const newSteps = steps.map((c) => {
+        if (c.index === activeStep) {
+          return { ...c, index: newIndex }
+        } return c
+      }).sort((a, b) => a.index - b.index)
+      postData({ action: 'Move step', num: findActiveStep.num, step_index: newIndex })
+      return clearState.concat([{ ...findCard, steps: newSteps }]).sort((a, b) => a.index - b.index)
+    }
+
+    const newIndex = (steps[indexOfEl].index + steps[indexOfEl + 1].index) / 2
 
     const newState = steps.map((c) => {
       if (c.index === activeStep) {
-        return { ...c, index: index }
+        return { ...c, index: newIndex }
       }
-      return c
-    })
-
-    const newSteps = newState.map((c) => {
-
-      if (c.index >= index && c.num !== findActiveStep.num && c.index <= activeStep) {
-        return { ...c, index: c.index + 1 }
-      }
-
       return c
     }).sort((a, b) => a.index - b.index)
 
-    return clearState.concat([{ ...findCard, steps: newSteps }]).sort((a, b) => a.index - b.index)
+    postData({ action: 'Move step', num: findActiveStep.num, step_index: newIndex })
+
+    return clearState.concat([{ ...findCard, steps: newState }]).sort((a, b) => a.index - b.index)
 
   }
 
   const moveTask = (state, index) => {
-
     const findActiveCard = state.find((c) => c.index === activeCard)
+    const indexOfEl = state.indexOf(state.find((e) => e.index + 1 === index))
+
+    if (index === 0) {
+      state[0].index = state[1].index / 2
+      postData({ action: 'Special move task', id1: state[0].id, task_index1: state[1].index / 2, id2: findActiveCard.id, task_index2: 0 })
+      return state.map((c) => {
+        if (c.index === activeCard) {
+          return { ...c, index: 0 }
+        }
+        return c
+      }).sort((a, b) => a.index - b.index)
+    }
+
+    if (index === state[state.length - 1].index + 1) {
+      const newIndex = state.find((e) => e.index === index - 1).index * 1.5
+      postData({ action: 'Move task', num: findActiveCard.num, step_index: newIndex })
+      return state.map((c) => {
+        if (c.index === activeCard) {
+          return { ...c, index: newIndex }
+        }
+        return c
+      }).sort((a, b) => a.index - b.index)
+    }
+
+    let newIndex = (state[indexOfEl].index + state[indexOfEl + 1].index) / 2
 
     const newState = state.map((c) => {
       if (c.index === activeCard) {
-        return { ...c, index: index }
+        return { ...c, index: newIndex }
       }
       return c
     })
+    console.log(findActiveCard.id)
 
-    return newState.map((c) => {
+    postData({ action: 'Move task', id: findActiveCard.id, task_index: newIndex })
 
-      if (c.index >= index && c.id !== findActiveCard.id && c.index <= activeCard) {
-        return { ...c, index: c.index + 1 }
-      }
-
-      return c
-    }).sort((a, b) => a.index - b.index)
+    return newState.sort((a, b) => a.index - b.index)
   }
 
   const deleteTask = (state, id) => {
@@ -96,13 +152,13 @@ function TaskList() {
   }
 
   const addTask = (state, title, id, task_index) => {
-    return state.concat([{ id: id, title: title, steps: [], index: task_index }])
+    return state.concat([{ id: id, title: title, steps: [], index: task_index * 1000 }])
   }
 
   const addStep = (state, label, id, num, step_index) => {
     const task = state.find((e) => e.id === id);
     if (task) {
-      return state.map((e) => e.id === id ? { ...e, steps: e.steps.concat([{ num: num, label: label, done: false, index: step_index }]) } : e);
+      return state.map((e) => e.id === id ? { ...e, steps: e.steps.concat([{ num: num, label: label, done: false, index: step_index * 1000 }]) } : e);
     }
     return state;
   }
@@ -153,7 +209,7 @@ function TaskList() {
 
 
   useEffect(() => {
-    dispatch({action: 'New', value: initialState})
+    dispatch({ action: 'New', value: initialState })
   }, [initialState])
 
   async function putData() {
@@ -164,22 +220,10 @@ function TaskList() {
         'Content-Type': 'application/json;charset=utf-8',
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify({data: state})
+      body: JSON.stringify({ data: state })
     })
   }
 
-  async function postData(obj) {
-    let res = await fetch('/todo-items', {
-      method: 'POST', 
-      headers: {
-        'Content-Type': 'application/json;charset=utf-8',
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify({data: obj})
-    })
-    console.log(res)
-  }
-  
   return (
     <React.Fragment>
       <DropArea onDrop={() => dispatch({ index: 0, action: 'Move' })} />
@@ -192,14 +236,14 @@ function TaskList() {
             </React.Fragment>
           )
         })}
-        <TaskAdd addTask={dispatch} state={state} postData={postData}/>
+        <TaskAdd addTask={dispatch} state={state} postData={postData} />
         <form onSubmit={(e) => {
           e.preventDefault()
           putData()
         }}>
-          <Button icon={'plus'} label={'save'}/>
+          <Button icon={'plus'} label={'save'} />
         </form>
-        
+
       </ol>
     </React.Fragment>
   );

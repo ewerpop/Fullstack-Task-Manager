@@ -3,11 +3,11 @@ import Button from "./Button"
 import DropArea from "./DropArea"
 
 export default function TaskSteps({ task, state, postData, moveStep, steps, addStep, deleteStep, doneStep, id, setActiveStep }) {
-
+    const defaultText = 'Your tasks'
     return (
         <div>
             <ul>
-                <li className="step">
+                <li style={{ listStyle: 'none' }}>
                     <DropArea onDrop={() => moveStep({ action: 'Move step', index: 0, id: id })} />
                 </li>
 
@@ -26,7 +26,7 @@ export default function TaskSteps({ task, state, postData, moveStep, steps, addS
                                     }} />
                                 }
                                 {e.done ?
-                                    <del><label className="step-label" htmlFor={e.num}>{e.label}</label></del> : <label className="step-label" htmlFor={e.num}>{e.label}</label>
+                                    <del><label className="step-label" htmlFor={e.num}>{e.label ? e.label : defaultText}</label></del> : <label className="step-label" htmlFor={e.num}>{e.label ? e.label : defaultText}</label>
                                 }
 
 

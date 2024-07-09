@@ -44,7 +44,7 @@ createDB()
 const PORT = process.env.PORT || 3010
 const app = express()
 
-app.use(function(req, res, next) {
+app.use(function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "http://localhost:3010"); // update to match the domain you will make the request from
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
@@ -61,9 +61,19 @@ app.use(express.json());
 let newItems = []
 
 app.get('/todo-items', async (req, res) => {
-    let result = await client.query(`SELECT * FROM tasks LEFT JOIN steps ON tasks.id = steps.task_id ORDER BY tasks.id`)
+    let result = await client.query(`SELECT * FROM tasks LEFT JOIN steps ON tasks.id = steps.task_id ORDER BY tasks.id, step_index`)
+    let data = []
+    let lastId = 0
     console.log(result)
-    res.json(JSON.stringify({data: []}))
+    result.forEach((el) => {
+        if (el.id !== lastId) {
+            data.push({ id: el.id, title: el.title, index: el.task_index, steps: [{ num: el.num, done: el.done, label: el.label, index: el.step_index }] })
+            lastId = el.id
+        } else {
+            data[data.length - 1].steps.push({ num: el.num, label: el.label, done: el.done, index: el.step_index })
+        }
+    })
+    res.json(JSON.stringify({ data }))
 })
 
 
@@ -76,7 +86,7 @@ app.get('/todo-items', async (req, res) => {
 //         }
 //     )
 //     })
-    
+
 // }
 
 app.post('/todo-items', async (req, res) => {
@@ -106,13 +116,38 @@ app.post('/todo-items', async (req, res) => {
                     SET done = ?
                     WHERE num=?`)
                 break
+            case 'Move task':
+                console.log(obj.task_index)
+                await client.run([obj.task_index, obj.id], `UPDATE tasks
+                    SET task_index = ?
+                    WHERE id=?`)
+                break
+            case 'Move step':
+                await client.run([obj.step_index, obj.num], `UPDATE steps
+                    SET step_index = ?
+                    WHERE num=?`)
+                break
+            case 'Special move step':
+                await client.run([obj.step_index1, obj.num1], `UPDATE steps
+                    SET step_index = ?
+                    WHERE num=?`)
+                await client.run([obj.step_index2, obj.num2], `UPDATE steps
+                    SET step_index = ?
+                    WHERE num=?`)
+            case 'Special move task':
+                await client.run([obj.task_index1, obj.id1], `UPDATE tasks
+                    SET task_index = ?
+                    WHERE id=?`)
+                await client.run([obj.task_index2, obj.id2], `UPDATE tasks
+                    SET task_index = ?
+                    WHERE id=?`)
         }
         res.send("ok")
     } catch (e) {
         console.error(e)
         res.send(e)
     }
-    
+
 })
 
 app.put('/todo-items', (req, res) => {

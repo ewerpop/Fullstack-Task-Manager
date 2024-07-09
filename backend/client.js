@@ -11,15 +11,15 @@ module.exports = {
     },
     query(sql) {
         return new Promise((res, rej) => {
-            this.db.all(sql, [], function(e, result) {
+            this.db.all(sql, [], function (e, result) {
                 if (e) rej(e)
                 res(result)
             })
-        }) 
+        })
     },
     select(sql) {
         return new Promise((res, rej) => {
-            this.db.all(sql, [], function(e, data) {
+            this.db.all(sql, [], function (e, data) {
                 if (e) rej(e)
                 res(data)
             })
