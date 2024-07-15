@@ -34,7 +34,7 @@ export default function Task({ postData, moveStep, setActiveStep, task, editTask
   const onSubmit = (e) => {
     e.preventDefault()
     deleteTask({ id: task.id, action: 'Delete' })
-    postData({ action: 'Delete task', id: task.id })
+    postData({ action: 'Delete task', id: task.id }, {target: 0})
   }
 
 

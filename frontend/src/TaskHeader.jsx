@@ -10,7 +10,7 @@ export default function TaskHeader({ postData, task, isEditable, setEditable, ed
   const handleEditTask = (e) => {
     e.preventDefault()
     editTask({ id: task.id, title: title, action: 'Edit' })
-    postData({ action: 'Edit task', title: title, id: task.id })
+    postData({ action: 'Edit task', title: title, id: task.id }, {target: 0})
     setEditable(false)
   }
   if (isEditable) {

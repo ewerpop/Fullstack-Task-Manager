@@ -1,11 +1,23 @@
 import "./style.css";
 import TaskList from "./TaskList";
+import {createBrowserRouter, RouterProvider} from 'react-router-dom'
+import Registration from "./Registration";
+
+const router = createBrowserRouter([
+  {
+    path: "/auth",
+    element: <Registration />
+  },
+  {
+    path: '/',
+    element: <TaskList/>
+  }
+])
 
 function App() {
   return (
     <main>
-      <h1>Task Manager</h1>
-      <TaskList />
+      <RouterProvider router={router}/>
     </main>
   );
 }

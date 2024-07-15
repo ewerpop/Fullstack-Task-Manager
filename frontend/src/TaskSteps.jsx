@@ -16,13 +16,14 @@ export default function TaskSteps({ task, state, postData, moveStep, steps, addS
                         <div key={e.num}>
 
                             <li className="step" onDragStart={() => setActiveStep(e.index)} draggable>
+
                                 {e.done ?
                                     <input id={e.num} onChange={() => {
                                         doneStep({ action: 'Done step', id: id, num: e.num, done: e.done })
-                                        postData({ action: 'Done step', id: id, num: e.num, done: e.done })
+                                        postData({ action: 'Done step', id: id, num: e.num, done: e.done }, {target: 0})
                                     }} name={e.num} type="checkbox" checked /> : <input name={e.num} type="checkbox" onChange={() => {
                                         doneStep({ action: 'Done step', id: id, num: e.num, done: e.done })
-                                        postData({ action: 'Done step', id: id, num: e.num, done: e.done })
+                                        postData({ action: 'Done step', id: id, num: e.num, done: e.done }, {target: 0})
                                     }} />
                                 }
                                 {e.done ?
@@ -33,7 +34,7 @@ export default function TaskSteps({ task, state, postData, moveStep, steps, addS
                                 <form onSubmit={(ev) => {
                                     ev.preventDefault()
                                     deleteStep({ action: "Delete step", id: id, num: e.num })
-                                    postData({ action: 'Delete step', num: e.num })
+                                    postData({ action: 'Delete step', num: e.num }, {target: 0})
                                 }}><Button icon='trash' label="Delete"></Button></form>
 
                             </li>

@@ -18,29 +18,6 @@ async function createDB() {
 
 createDB()
 
-// let db = new sqlite3.Database('./tasks.db', (err) => {
-//     if (err) {
-//       console.error(err.message);
-//     }
-//     console.log('Connected to the tasks database.');
-// });
-
-// db.run(`CREATE TABLE IF NOT EXISTS tasks (
-//     id INTEGER PRIMARY KEY,
-//     title TEXT,
-//     task_index INTEGER
-// )`);
-
-// db.run(`CREATE TABLE IF NOT EXISTS steps(
-//     id INTEGER PRIMARY KEY,
-//     task_id INTEGER,
-//     num INTEGER,
-//     title TEXT,
-//     done BOOLEAN,
-//     step_index INTEGER,
-//     FOREIGN KEY(task_id) REFERENCES tasks(id)
-// )`)
-
 const PORT = process.env.PORT || 3010
 const app = express()
 
@@ -64,47 +41,36 @@ app.get('/todo-items', async (req, res) => {
     let result = await client.query(`SELECT * FROM tasks LEFT JOIN steps ON tasks.id = steps.task_id ORDER BY tasks.id, step_index`)
     let data = []
     let lastId = 0
-    console.log(result)
     result.forEach((el) => {
         if (el.id !== lastId) {
-            data.push({ id: el.id, title: el.title, index: el.task_index, steps: [{ num: el.num, done: el.done, label: el.label, index: el.step_index }] })
+            data.push({ id: el.id, title: el.title, index: el.task_index, steps: [{ num: el.step_id, done: el.done, label: el.label, index: el.step_index }] })
             lastId = el.id
         } else {
-            data[data.length - 1].steps.push({ num: el.num, label: el.label, done: el.done, index: el.step_index })
+            data[data.length - 1].steps.push({ num: el.step_id, label: el.label, done: el.done, index: el.step_index })
         }
     })
+    console.log(JSON.stringify({ data }))
     res.json(JSON.stringify({ data }))
 })
 
-
-// const addTask =  (title, index, id) => {
-//     return new Promise((resolve, reject) => {
-//         db.run(`INSERT INTO tasks(title, task_index, id)
-//         VALUES(?, ?, ?)`, [title, index, id], function(e) {
-//             if(e) reject(e)
-//             resolve(id)
-//         }
-//     )
-//     })
-
-// }
-
 app.post('/todo-items', async (req, res) => {
     let obj = req.body.data
+    let id = 20000000;
     try {
         switch (obj.action) {
             case 'Add task':
-                await client.run([obj.title, obj.index, obj.id], `INSERT INTO tasks (title, task_index, id) VALUES (?, ?, ?)`)
+                id = await client.run([obj.title, obj.index], `INSERT INTO tasks (title, task_index) VALUES (?, ?) RETURNING *`)
                 break
             case 'Add step':
-                await client.run([obj.id, obj.num, obj.label, false, obj.step_index], `INSERT INTO steps (task_id, num, label, done, step_index) VALUES (?, ?, ?, ?, ?)`)
+                id = await client.run([obj.id, obj.label, false, obj.step_index], `INSERT INTO steps (task_id, label, done, step_index) VALUES (?, ?, ?, ?)`)
+                console.log(id)
                 break
             case 'Delete task':
                 await client.run(obj.id, `DELETE FROM tasks WHERE id=?`)
                 await client.run(obj.id, 'DELETE FROM steps WHERE task_id=?')
                 break
             case 'Delete step':
-                await client.run(obj.num, `DELETE FROM steps WHERE num=?`)
+                await client.run(obj.num, `DELETE FROM steps WHERE step_id=?`)
                 break
             case 'Edit task':
                 await client.run([obj.title, obj.id], `UPDATE tasks
@@ -125,15 +91,15 @@ app.post('/todo-items', async (req, res) => {
             case 'Move step':
                 await client.run([obj.step_index, obj.num], `UPDATE steps
                     SET step_index = ?
-                    WHERE num=?`)
+                    WHERE id=?`)
                 break
             case 'Special move step':
                 await client.run([obj.step_index1, obj.num1], `UPDATE steps
                     SET step_index = ?
-                    WHERE num=?`)
+                    WHERE id=?`)
                 await client.run([obj.step_index2, obj.num2], `UPDATE steps
                     SET step_index = ?
-                    WHERE num=?`)
+                    WHERE id=?`)
             case 'Special move task':
                 await client.run([obj.task_index1, obj.id1], `UPDATE tasks
                     SET task_index = ?
@@ -142,7 +108,7 @@ app.post('/todo-items', async (req, res) => {
                     SET task_index = ?
                     WHERE id=?`)
         }
-        res.send("ok")
+        res.json(JSON.stringify({ data: {id}}))
     } catch (e) {
         console.error(e)
         res.send(e)

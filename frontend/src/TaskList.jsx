@@ -15,29 +15,15 @@ function TaskList() {
   const [activeCard, setActiveCard] = useState(null) //* activeCard принимает значение index, той карточки, которую сейчас перетаскивают
   const [initialState, setInitialState] = useState([])
 
-
-  async function postData(obj) {
-    let res = await fetch('/todo-items', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json;charset=utf-8',
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify({ data: obj })
-    })
-    console.log(res)
-  }
-
-
   async function getData() {
     fetch('/todo-items')
       .then((res) => res.json())
       .then((result) => {
         let resultJSON = JSON.parse(result)
+        console.log(resultJSON)
         let newResult = resultJSON.data.map((e) => {
           return { ...e, steps: e.steps.sort((a, b) => a.index - b.index) }
         })
-        console.log(newResult)
         setInitialState(newResult.sort((a, b) => a.index - b.index))
       })
   }
@@ -224,8 +210,33 @@ function TaskList() {
     })
   }
 
+  async function postData(obj, objFront) {
+    fetch('/todo-items', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=utf-8',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({ data: obj })
+    })
+      .then(res => res.json())
+      .then(result => {
+        const resultJSON = JSON.parse(result)
+        if (objFront.target) {
+          if (objFront.target === 'task') {
+            dispatch({ ...objFront, id: resultJSON.data.id })
+          } else if (objFront.target === 'step') {
+            console.log(resultJSON.data.id)
+            dispatch({ ...objFront, num: resultJSON.data.id })
+          }
+        }
+
+      })
+  }
+
   return (
     <React.Fragment>
+      <h1>Task manager</h1>
       <DropArea onDrop={() => dispatch({ index: 0, action: 'Move' })} />
       <ol className="lane">
         {state.map((e) => {

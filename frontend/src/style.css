@@ -54,6 +54,7 @@ main {
 .card-header {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   border: 0;
   padding: 0;
@@ -140,6 +141,12 @@ main {
   border: 1px dashed #dcdcdc;
   border-radius: 5px;
   
+}
+
+.logIn-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .progress-steps {
