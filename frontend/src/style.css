@@ -54,6 +54,7 @@ main {
 .card-header {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   border: 0;
   padding: 0;
@@ -87,7 +88,8 @@ main {
 
 .card-title-input {
   flex: 1 1 10px;
-  width: 10px;
+  width: 60%;
+  height: 60%;
   margin: -2px 0 -2px -4px;
 }
 
@@ -139,6 +141,12 @@ main {
   border: 1px dashed #dcdcdc;
   border-radius: 5px;
   
+}
+
+.logIn-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .progress-steps {

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function TaskHeader({task, isEditable, setEditable, editTask}) {
+export default function TaskHeader({ postData, task, isEditable, setEditable, editTask }) {
   const [title, setTitle] = useState(task.title)
 
   const onChange = (e) => {
@@ -9,15 +9,16 @@ export default function TaskHeader({task, isEditable, setEditable, editTask}) {
 
   const handleEditTask = (e) => {
     e.preventDefault()
-    editTask({id: task.id, title: title, action: 'Edit'})
+    editTask({ id: task.id, title: title, action: 'Edit' })
+    postData({ action: 'Edit task', title: title, id: task.id }, {target: 0})
     setEditable(false)
   }
-  if(isEditable) {
+  if (isEditable) {
     return (
       <header className="card-header">
         <form className="card-title-form" onSubmit={handleEditTask}>
           <input
-            className="card-title card-title-input"
+            className="card-title-input"
             defaultValue={title}
             value={title}
             onChange={onChange}
@@ -32,9 +33,9 @@ export default function TaskHeader({task, isEditable, setEditable, editTask}) {
 
   }
 
-    return (
-        <header className="card-header">
-          <p className="card-title">{title}</p>
-        </header>
-    )
+  return (
+    <header className="card-header">
+      <p className="card-title">{title}</p>
+    </header>
+  )
 }
