@@ -27,10 +27,28 @@ function TaskList() {
         setInitialState(newResult.sort((a, b) => a.index - b.index))
       })
   }
-
+  async function getData2() {
+    fetch('/todo-items/get',{
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=utf-8',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({data: {id: localStorage.getItem('user_id')}})
+    })
+    .then((res) => res.json())
+    .then((result) => {
+      let resultJSON = JSON.parse(result)
+      console.log(resultJSON)
+      let newResult = resultJSON.data.map((e) => {
+        return { ...e, steps: e.steps.sort((a, b) => a.index - b.index) }
+      })
+      setInitialState(newResult.sort((a, b) => a.index - b.index))
+    })
+  }
 
   useEffect(() => {
-    getData()
+    getData2()
   }, [])
 
   // ! далее идут функции для reducer
@@ -54,7 +72,7 @@ function TaskList() {
         }
         return c
       }).sort((a, b) => a.index - b.index)
-      postData({ action: 'Special move step', num1: steps[0].num, step_index1: steps[1].index / 2, num2: findActiveStep.num, step_index2: 0 })
+      postData({ action: 'Special move step', num1: steps[0].num, step_index1: steps[1].index / 2, num2: findActiveStep.num, step_index2: 0 }, {target: 0})
       return clearState.concat([{ ...findCard, steps: newSteps }]).sort((a, b) => a.index - b.index)
     }
 
@@ -65,7 +83,7 @@ function TaskList() {
           return { ...c, index: newIndex }
         } return c
       }).sort((a, b) => a.index - b.index)
-      postData({ action: 'Move step', num: findActiveStep.num, step_index: newIndex })
+      postData({ action: 'Move step', num: findActiveStep.num, step_index: newIndex }, {target: 0})
       return clearState.concat([{ ...findCard, steps: newSteps }]).sort((a, b) => a.index - b.index)
     }
 
@@ -78,7 +96,7 @@ function TaskList() {
       return c
     }).sort((a, b) => a.index - b.index)
 
-    postData({ action: 'Move step', num: findActiveStep.num, step_index: newIndex })
+    postData({ action: 'Move step', num: findActiveStep.num, step_index: newIndex }, {target: 0})
 
     return clearState.concat([{ ...findCard, steps: newState }]).sort((a, b) => a.index - b.index)
 
@@ -90,7 +108,7 @@ function TaskList() {
 
     if (index === 0) {
       state[0].index = state[1].index / 2
-      postData({ action: 'Special move task', id1: state[0].id, task_index1: state[1].index / 2, id2: findActiveCard.id, task_index2: 0 })
+      postData({ action: 'Special move task', id1: state[0].id, task_index1: state[1].index / 2, id2: findActiveCard.id, task_index2: 0 }, {target: 0})
       return state.map((c) => {
         if (c.index === activeCard) {
           return { ...c, index: 0 }
@@ -101,7 +119,7 @@ function TaskList() {
 
     if (index === state[state.length - 1].index + 1) {
       const newIndex = state.find((e) => e.index === index - 1).index * 1.5
-      postData({ action: 'Move task', num: findActiveCard.num, step_index: newIndex })
+      postData({ action: 'Move task', num: findActiveCard.num, step_index: newIndex }, {target: 0})
       return state.map((c) => {
         if (c.index === activeCard) {
           return { ...c, index: newIndex }
@@ -120,11 +138,11 @@ function TaskList() {
     })
     console.log(findActiveCard.id)
 
-    postData({ action: 'Move task', id: findActiveCard.id, task_index: newIndex })
+    postData({ action: 'Move task', id: findActiveCard.id, task_index: newIndex }, {target: 0})
 
     return newState.sort((a, b) => a.index - b.index)
   }
-
+ 
   const deleteTask = (state, id) => {
     return state.filter((e) => e.id !== id)
   }
@@ -226,7 +244,6 @@ function TaskList() {
           if (objFront.target === 'task') {
             dispatch({ ...objFront, id: resultJSON.data.id })
           } else if (objFront.target === 'step') {
-            console.log(resultJSON.data.id)
             dispatch({ ...objFront, num: resultJSON.data.id })
           }
         }

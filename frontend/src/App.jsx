@@ -2,14 +2,15 @@ import "./style.css";
 import TaskList from "./TaskList";
 import {createBrowserRouter, RouterProvider} from 'react-router-dom'
 import Registration from "./Registration";
+import { useState } from "react";
 
 const router = createBrowserRouter([
   {
-    path: "/auth",
+    path: "/",
     element: <Registration />
   },
   {
-    path: '/',
+    path: '/tasks',
     element: <TaskList/>
   }
 ])
@@ -17,7 +18,7 @@ const router = createBrowserRouter([
 function App() {
   return (
     <main>
-      <RouterProvider router={router}/>
+        <RouterProvider router={router}/>
     </main>
   );
 }

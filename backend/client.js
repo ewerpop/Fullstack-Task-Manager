@@ -9,9 +9,9 @@ module.exports = {
             return e
         }
     },
-    query(sql) {
+    query(sql, values) {
         return new Promise((res, rej) => {
-            this.db.all(sql, [], function (e, result) {
+            this.db.all(sql, values, function (e, result) {
                 if (e) rej(e)
                 res(result)
             })
@@ -20,6 +20,14 @@ module.exports = {
     select(sql) {
         return new Promise((res, rej) => {
             this.db.all(sql, [], function (e, data) {
+                if (e) rej(e)
+                res(data)
+            })
+        })
+    },
+    search(sql, value) {
+        return new Promise((res, rej) => {
+            this.db.run(sql, value, function (e, data) {
                 if (e) rej(e)
                 res(data)
             })
@@ -38,18 +46,27 @@ module.exports = {
     },
     createUsers() {
         return new Promise((res, rej) => {
-            this.db.run(`CREATE TABLE IF NOT EXISTS 
+            this.db.run(`CREATE TABLE IF NOT EXISTS users( 
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT,
-                password TEXT`)
+                password TEXT)`, function(e) {
+                    if (e) {
+                        rej(e)
+                    } else {
+                       res('okay') 
+                    }
+                    
+                })
         })
     },
     createTasks() {
         return new Promise((res, rej) => {
             this.db.run(`CREATE TABLE IF NOT EXISTS tasks (
+                user_id INTEGER,
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT,
-                task_index INTEGER
+                task_index INTEGER,
+                FOREIGN KEY(user_id) REFERENCES users(id)
             )`, function (e) {
                 if (e) {
                     rej(e)

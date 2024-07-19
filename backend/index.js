@@ -4,11 +4,14 @@ const fs = require('fs')
 const EventEmitter = require('events');
 const myEmitter = new EventEmitter();
 const client = require('./client')
+const bcrypt = require('bcrypt')
+const saltRounds = 10
 
 async function createDB() {
     try {
         await client.init()
         await client.connect()
+        await client.createUsers()
         await client.createTasks()
         await client.createSteps()
     } catch (e) {
@@ -38,7 +41,7 @@ app.use(express.json());
 let newItems = []
 
 app.get('/todo-items', async (req, res) => {
-    let result = await client.query(`SELECT * FROM tasks LEFT JOIN steps ON tasks.id = steps.task_id ORDER BY tasks.id, step_index`)
+    let result = await client.query(`SELECT * FROM tasks LEFT JOIN steps ON tasks.id = steps.task_id ORDER BY tasks.id, step_index`, [])
     let data = []
     let lastId = 0
     result.forEach((el) => {
@@ -49,8 +52,57 @@ app.get('/todo-items', async (req, res) => {
             data[data.length - 1].steps.push({ num: el.step_id, label: el.label, done: el.done, index: el.step_index })
         }
     })
-    console.log(JSON.stringify({ data }))
     res.json(JSON.stringify({ data }))
+})
+
+app.post('/todo-items/sign', async (req, res) => {
+    const {username, password} = req.body.data
+    const passwords = await client.query('SELECT password, id FROM users WHERE username=?', [username])
+    if (passwords.length === 0) {
+        res.json({message: 'This user doesn`t exists'})
+    } else if (passwords != []){
+        const validPassword = bcrypt.compareSync(password, passwords[0].password)
+        if (!validPassword) {
+            res.json({message: 'Wrong password'})
+        } else {
+            res.json({message: 'Okay', id: passwords[0].id})
+        }
+    }
+})
+
+app.post('/todo-items/get', async (req, res) => {
+    const {id} = req.body.data
+    let result = await client.query(`SELECT * FROM tasks LEFT JOIN steps ON tasks.id = steps.task_id WHERE user_id=? ORDER BY tasks.id, step_index`, [id])
+    let data = []
+    let lastId = 0
+    result.forEach((el) => {
+        if (el.id !== lastId) {
+            data.push({ id: el.id, title: el.title, index: el.task_index, steps: [{ num: el.step_id, done: el.done, label: el.label, index: el.step_index }] })
+            lastId = el.id
+        } else {
+            data[data.length - 1].steps.push({ num: el.step_id, label: el.label, done: el.done, index: el.step_index })
+        }
+    })
+    res.json(JSON.stringify({ data }))
+})
+
+app.post('/todo-items/auth', async (req, res) => {
+    let id
+    try {
+        const {username, password} = req.body.data
+        const usernames = await client.select('SELECT username FROM users')
+        const candidat = usernames.find((e) => e.username === username)
+        if (candidat) {
+            res.json({message: 'Username is already exists'})
+        } else {
+            const hashPassword = bcrypt.hashSync(password, 4)
+            id = await client.run([username, hashPassword], `INSERT INTO users (username, password) VALUES (?, ?)`)
+            console.log(id)
+            res.json({message: 'Success', id: id})
+        }
+    } catch (e) {
+        console.error(e)
+    }
 })
 
 app.post('/todo-items', async (req, res) => {
@@ -59,11 +111,10 @@ app.post('/todo-items', async (req, res) => {
     try {
         switch (obj.action) {
             case 'Add task':
-                id = await client.run([obj.title, obj.index], `INSERT INTO tasks (title, task_index) VALUES (?, ?) RETURNING *`)
+                id = await client.run([obj.title, obj.index, obj.user_id], `INSERT INTO tasks (title, task_index, user_id) VALUES (?, ?, ?) RETURNING *`)
                 break
             case 'Add step':
                 id = await client.run([obj.id, obj.label, false, obj.step_index], `INSERT INTO steps (task_id, label, done, step_index) VALUES (?, ?, ?, ?)`)
-                console.log(id)
                 break
             case 'Delete task':
                 await client.run(obj.id, `DELETE FROM tasks WHERE id=?`)
@@ -80,7 +131,7 @@ app.post('/todo-items', async (req, res) => {
             case 'Done step':
                 await client.run([!obj.done, obj.num], `UPDATE steps
                     SET done = ?
-                    WHERE num=?`)
+                    WHERE step_id=?`)
                 break
             case 'Move task':
                 console.log(obj.task_index)
@@ -91,15 +142,16 @@ app.post('/todo-items', async (req, res) => {
             case 'Move step':
                 await client.run([obj.step_index, obj.num], `UPDATE steps
                     SET step_index = ?
-                    WHERE id=?`)
+                    WHERE step_id=?`)
                 break
             case 'Special move step':
                 await client.run([obj.step_index1, obj.num1], `UPDATE steps
                     SET step_index = ?
-                    WHERE id=?`)
+                    WHERE step_id=?`)
                 await client.run([obj.step_index2, obj.num2], `UPDATE steps
                     SET step_index = ?
-                    WHERE id=?`)
+                    WHERE step_id=?`)
+                break
             case 'Special move task':
                 await client.run([obj.task_index1, obj.id1], `UPDATE tasks
                     SET task_index = ?
@@ -107,7 +159,11 @@ app.post('/todo-items', async (req, res) => {
                 await client.run([obj.task_index2, obj.id2], `UPDATE tasks
                     SET task_index = ?
                     WHERE id=?`)
-        }
+                break
+            case 'Add user':
+                await client.run([obj.username, obj.password], `INSERT INTO users (username, password) VALUES (?, ?)`)
+                break
+        } 
         res.json(JSON.stringify({ data: {id}}))
     } catch (e) {
         console.error(e)

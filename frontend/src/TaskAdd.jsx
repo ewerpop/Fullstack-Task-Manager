@@ -14,6 +14,7 @@ export default function TaskAdd({ addTask, state, postData }) {
       action: 'Add task',
       title: title,
       index: idx,
+      user_id: localStorage.getItem('user_id')
     }, {action: 'Add', title: title, index: idx, target: 'task'})
     // await addTask({action: 'Add', title: title, id: req, index: idx})
     setTitle('')
